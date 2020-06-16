@@ -40,7 +40,7 @@ class CardModel {
             generatedCards.append(card1)
             generatedCards.append(card2)
             
-            print(randomNumber)
+//            print(randomNumber)
         }
         
         // Randomize the cards within the array
