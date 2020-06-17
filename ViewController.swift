@@ -12,8 +12,13 @@ class ViewController: UIViewController, UICollectionViewDataSource, UICollection
  
     @IBOutlet weak var collectionView: UICollectionView!
     
+    @IBOutlet weak var timerLabel: UILabel!
+    
     let model = CardModel()
     var cardsArray = [Card]()
+    
+    var timer:Timer?
+    var milliseconds:Int = 20*1000 // 20 seconds
     
     var firstFlippedCardIndex:IndexPath?
 
@@ -27,6 +32,31 @@ class ViewController: UIViewController, UICollectionViewDataSource, UICollection
         // Set the view controller as datasource and delegate of collection view
         collectionView.dataSource = self
         collectionView.delegate = self
+        
+        // Initialize timer
+        timer = Timer.scheduledTimer(timeInterval: 0.001, target: self, selector: #selector(timerFired), userInfo: nil, repeats: true)
+        RunLoop.main.add(timer!, forMode: .common) // to prevent stopping timer when touching screen
+    }
+    
+    // MARK: - Timer Methods
+    
+    @objc func timerFired() {
+        
+        // Decrement the time counter
+        milliseconds -= 1
+        
+        // Update the label
+        let seconds:Double = Double(milliseconds) / 1000.0
+        timerLabel.text = String(format: "Time Remaining: %.2f", seconds)
+        
+        // Stop the timer if it reaches zero
+        if milliseconds == 0 {
+            timerLabel.textColor = UIColor.red
+            timer?.invalidate()
+            
+            // Check if the user has cleared all the cards
+            checkForGameEnd()
+        }
     }
 
     // Collection View Delegate Methods
@@ -120,7 +150,12 @@ class ViewController: UIViewController, UICollectionViewDataSource, UICollection
             cardOneCell?.remove()
             cardTwoCell?.remove()
             
+            // Was that the last pair?
+            checkForGameEnd()
         } else {
+            
+            cardOne.isFlipped = false
+            cardTwo.isFlipped = false
             
             // Not a match, flip the cards back down
             cardOneCell?.flipDown()
@@ -130,6 +165,50 @@ class ViewController: UIViewController, UICollectionViewDataSource, UICollection
         
         // Reset the firstFlippedCardIndex property
         firstFlippedCardIndex = nil
+    }
+    
+    func checkForGameEnd() {
+        
+        // Check if there's any card that is unmatched
+        // Assume the user has won, loop through all cards to see if all are matched
+        var hasWon = true
+        
+        for card in cardsArray {
+            
+            if card.isMatched == false {
+                
+                // Found a card that is unmatched
+                hasWon = false
+                break
+            }
+        }
+        
+        if hasWon {
+            
+            // user has won -- show dialogue
+            showAlert(title: "Congratulations!", message: "You won the game!")
+            
+        } else {
+            
+            // user hasn't won yet, check if there's any time left
+            if milliseconds <= 0 {
+                showAlert(title: "Time is up!", message: "Better luck next time.")
+            }
+            
+        }
+        
+    }
+    
+    func showAlert(title:String, message:String){
+        
+        // Add alert
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        
+        // Add button for user to dismiss alert
+        let okAction = UIAlertAction(title: "OK", style: .default, handler: nil)
+        alert.addAction(okAction)
+        
+        present(alert, animated: true, completion: nil)
     }
 }
 
